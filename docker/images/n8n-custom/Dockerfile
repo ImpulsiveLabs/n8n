@@ -38,7 +38,7 @@ COPY --from=builder /compiled /usr/local/lib/node_modules/n8n
 COPY docker/images/n8n/docker-entrypoint.sh /
 
 ARG TARGETPLATFORM
-ARG LAUNCHER_VERSION=1.1.0
+ARG LAUNCHER_VERSION=1.1.1
 COPY docker/images/n8n/n8n-task-runners.json /etc/n8n-task-runners.json
 COPY extras/ /home/node/extras
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then ARCH_NAME="amd64"; \
