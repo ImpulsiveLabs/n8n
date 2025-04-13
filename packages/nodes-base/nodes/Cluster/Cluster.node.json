@@ -1,0 +1,76 @@
+{
+	"node": "data-nodes-base.cluster",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"details": "The Cluster node enables grouping similar data points based on predefined or dynamic criteria. It is ideal for data segmentation, pattern recognition, and machine learning applications. The node supports various clustering algorithms, including K-Means, DBSCAN, and Hierarchical Clustering.",
+	"categories": ["Development", "Core Nodes", "Data Analysis"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://docs.example.com/clustering"
+			}
+		],
+		"generic": [
+			{
+				"label": "Introduction to Clustering",
+				"icon": "🔍",
+				"url": "https://example.com/docs/clustering-intro"
+			},
+			{
+				"label": "K-Means Clustering Guide",
+				"icon": "📊",
+				"url": "https://example.com/docs/kmeans"
+			},
+			{
+				"label": "DBSCAN Clustering Tutorial",
+				"icon": "🔬",
+				"url": "https://example.com/docs/dbscan"
+			},
+			{
+				"label": "Hierarchical Clustering Overview",
+				"icon": "🌲",
+				"url": "https://example.com/docs/hierarchical-clustering"
+			},
+			{
+				"label": "Choosing the Right Clustering Algorithm",
+				"icon": "🤖",
+				"url": "https://example.com/docs/clustering-algorithms"
+			},
+			{
+				"label": "Visualizing Clustered Data",
+				"icon": "📈",
+				"url": "https://example.com/docs/visualization"
+			},
+			{
+				"label": "Advanced Clustering Techniques",
+				"icon": "🛠️",
+				"url": "https://example.com/docs/advanced-clustering"
+			},
+			{
+				"label": "Clustering Use Cases and Applications",
+				"icon": "💼",
+				"url": "https://example.com/docs/use-cases"
+			},
+			{
+				"label": "Best Practices for Data Clustering",
+				"icon": "📌",
+				"url": "https://example.com/docs/best-practices"
+			},
+			{
+				"label": "Machine Learning & Clustering",
+				"icon": "🚀",
+				"url": "https://example.com/docs/ml-clustering"
+			}
+		]
+	},
+	"alias": [
+		"Clustering",
+		"Data Segmentation",
+		"Machine Learning",
+		"Pattern Recognition",
+		"Data Science"
+	],
+	"subcategories": {
+		"Core Nodes": ["Data Analysis", "Machine Learning"]
+	}
+}
