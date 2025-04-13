@@ -1,0 +1,70 @@
+{
+	"node": "openalex-nodes-base.function",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"details": "The OpenAlex Function node allows you to interact with the OpenAlex API to retrieve, transform, and process academic publication data. You can query for papers, authors, venues, and institutions, and perform advanced filtering and sorting. This node is ideal for extracting and manipulating academic data for research or analytics workflows.",
+	"categories": ["Development", "Core Nodes", "Data Retrieval"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://docs.openalex.org"
+			}
+		],
+		"generic": [
+			{
+				"label": "OpenAlex API Introduction",
+				"icon": "🔍",
+				"url": "https://openalex.org/docs"
+			},
+			{
+				"label": "Querying Publications in OpenAlex",
+				"icon": "📚",
+				"url": "https://openalex.org/docs/publications"
+			},
+			{
+				"label": "OpenAlex Data Visualization Guide",
+				"icon": "📊",
+				"url": "https://openalex.org/docs/visualization"
+			},
+			{
+				"label": "Getting Started with OpenAlex API",
+				"icon": "🚀",
+				"url": "https://openalex.org/docs/getting-started"
+			},
+			{
+				"label": "Exploring Author and Institution Data in OpenAlex",
+				"icon": "🏫",
+				"url": "https://openalex.org/docs/authors-institutions"
+			},
+			{
+				"label": "OpenAlex: The Academic Graph",
+				"icon": "📐",
+				"url": "https://openalex.org/docs/academic-graph"
+			},
+			{
+				"label": "OpenAlex Data Use Cases",
+				"icon": "💼",
+				"url": "https://openalex.org/docs/use-cases"
+			},
+			{
+				"label": "How to Contribute to OpenAlex",
+				"icon": "🤝",
+				"url": "https://openalex.org/docs/contributing"
+			},
+			{
+				"label": "Advanced Filtering with OpenAlex",
+				"icon": "🔧",
+				"url": "https://openalex.org/docs/filtering"
+			},
+			{
+				"label": "Tutorial: Building a Scholarly Analytics Dashboard with OpenAlex",
+				"icon": "📈",
+				"url": "https://openalex.org/blog/building-scholar-dashboard"
+			}
+		]
+	},
+	"alias": ["OpenAlex", "Academic Data", "Research", "API", "Scholarly Data"],
+	"subcategories": {
+		"Core Nodes": ["Data Retrieval", "Analytics"]
+	}
+}

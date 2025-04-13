@@ -15,6 +15,7 @@
     "build:frontend": "turbo run build:frontend",
     "build:nodes": "turbo run build:nodes",
     "typecheck": "turbo typecheck",
+    "postbuild": "cp packages/nodes-base/nodes/OpenAlex/fetch_openalex_data.py packages/nodes-base/dist/nodes/OpenAlex/ && cp packages/nodes-base/nodes/Cluster/cluster_creation.py packages/nodes-base/dist/nodes/Cluster/",
     "dev": "turbo run dev --parallel --env-mode=loose --filter=!n8n-design-system --filter=!@n8n/chat --filter=!@n8n/task-runner",
     "dev:be": "turbo run dev --parallel --env-mode=loose --filter=!n8n-design-system --filter=!@n8n/chat --filter=!@n8n/task-runner --filter=!n8n-editor-ui",
     "dev:ai": "turbo run dev --parallel --env-mode=loose --filter=@n8n/nodes-langchain --filter=n8n --filter=n8n-core",

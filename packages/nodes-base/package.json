@@ -675,6 +675,8 @@
       "dist/nodes/Okta/Okta.node.js",
       "dist/nodes/OneSimpleApi/OneSimpleApi.node.js",
       "dist/nodes/OpenAi/OpenAi.node.js",
+      "dist/nodes/OpenAlex/OpenAlex.node.js",
+      "dist/nodes/Cluster/Cluster.node.js",
       "dist/nodes/OpenThesaurus/OpenThesaurus.node.js",
       "dist/nodes/OpenWeatherMap/OpenWeatherMap.node.js",
       "dist/nodes/Orbit/Orbit.node.js",
