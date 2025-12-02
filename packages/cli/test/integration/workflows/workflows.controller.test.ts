@@ -606,7 +606,7 @@ describe('GET /workflows/:workflowId', () => {
 		});
 	});
 
-	test('should return active version', async () => {
+	test('should return active version with workflowPublishHistory', async () => {
 		const workflow = await createActiveWorkflow({}, owner);
 
 		const response = await authOwnerAgent.get(`/workflows/${workflow.id}`).expect(200);
@@ -617,6 +617,11 @@ describe('GET /workflows/:workflowId', () => {
 		expect(activeVersion).toMatchObject({
 			versionId: workflow.activeVersionId,
 			workflowId: workflow.id,
+		});
+		expect(activeVersion.workflowPublishHistory).toHaveLength(1);
+		expect(activeVersion.workflowPublishHistory[0]).toMatchObject({
+			event: 'activated',
+			versionId: workflow.activeVersionId,
 		});
 	});
 
@@ -2784,6 +2789,11 @@ describe('POST /workflows/:workflowId/activate', () => {
 		expect(data.id).toBe(workflow.id);
 		expect(data.activeVersionId).toBe(newVersionId);
 		expect(data.activeVersion.versionId).toBe(newVersionId);
+		expect(data.activeVersion.workflowPublishHistory).toHaveLength(1);
+		expect(data.activeVersion.workflowPublishHistory[0]).toMatchObject({
+			event: 'activated',
+			versionId: newVersionId,
+		});
 
 		expect(addRecordSpy).toBeCalledWith({
 			event: 'activated',
