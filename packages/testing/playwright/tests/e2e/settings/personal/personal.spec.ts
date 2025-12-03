@@ -39,6 +39,15 @@ test.describe('Personal Settings', () => {
 			).toBeVisible();
 			await n8n.notifications.closeNotificationByText('Personal details updated');
 		}
+test.describe('User Management', () => {
+	test('should login and logout @auth:none', async ({ n8n }) => {
+		await n8n.goHome();
+		await n8n.signIn.goToSignIn();
+		await n8n.signIn.loginWithEmailAndPassword(
+			INSTANCE_OWNER_CREDENTIALS.email,
+			INSTANCE_OWNER_CREDENTIALS.password,
+		);
+		await expect(n8n.sideBar.getSettings()).toBeVisible();
 	});
 
 	test('should not allow malicious values for personal data', async ({ n8n }) => {
