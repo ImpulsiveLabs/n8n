@@ -420,7 +420,7 @@ export class WorkflowsController {
 		const forceSave = req.query.forceSave === 'true';
 
 		let updateData = new WorkflowEntity();
-		const { tags, parentFolderId, aiBuilderAssisted, ...rest } = req.body;
+		const { tags, parentFolderId, aiBuilderAssistedm ,expectedChecksum, ...rest } = req.body;
 
 		// TODO: Add zod validation for entire `rest` object before assigning to `updateData`
 		if (
@@ -446,6 +446,7 @@ export class WorkflowsController {
 			parentFolderId,
 			forceSave: isSharingEnabled ? forceSave : true,
 			aiBuilderAssisted,
+			expectedChecksum,
 		});
 
 		const scopes = await this.workflowService.getWorkflowScopes(req.user, workflowId);
@@ -516,7 +517,7 @@ export class WorkflowsController {
 	@ProjectScope('workflow:update')
 	async activate(req: WorkflowRequest.Activate) {
 		const { workflowId } = req.params;
-		const { versionId, name, description } = req.body;
+		const { versionId, name, description, expectedChecksum } = req.body;
 
 		if (!versionId) {
 			throw new BadRequestError('versionId is required');
@@ -526,6 +527,7 @@ export class WorkflowsController {
 			versionId,
 			name,
 			description,
+			expectedChecksum,
 		});
 
 		const scopes = await this.workflowService.getWorkflowScopes(req.user, workflowId);

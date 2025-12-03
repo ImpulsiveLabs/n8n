@@ -28,6 +28,7 @@ export declare namespace WorkflowRequest {
 		parentFolderId?: string;
 		uiContext?: string;
 		aiBuilderAssisted?: boolean;
+		expectedChecksum?: string;
 	}>;
 
 	// TODO: Use a discriminator when CAT-1809 lands
@@ -97,7 +98,7 @@ export declare namespace WorkflowRequest {
 	type Activate = AuthenticatedRequest<
 		{ workflowId: string },
 		{},
-		{ versionId: string; name?: string; description?: string }
+		{ versionId: string; name?: string; description?: string; expectedChecksum?: string }
 	>;
 
 	type Deactivate = AuthenticatedRequest<{ workflowId: string }>;

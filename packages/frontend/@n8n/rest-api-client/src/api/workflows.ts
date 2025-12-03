@@ -39,6 +39,8 @@ export interface WorkflowDataUpdate {
 	parentFolderId?: string;
 	uiContext?: string;
 	aiBuilderAssisted?: boolean;
+	// checksum of workflow snapshot for conflict detection
+	expectedChecksum?: string;
 }
 
 export interface WorkflowDataCreate extends WorkflowDataUpdate {
