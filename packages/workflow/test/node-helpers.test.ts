@@ -5633,7 +5633,7 @@ describe('NodeHelpers', () => {
 
 		test.each([
 			['javaScript', 'Code in JavaScript'],
-			['python', 'Code in Python'],
+			['python', 'Code in Python (Beta)'],
 			['pythonNative', 'Code in Python (Native)'],
 		])(
 			'should return action-based name for Code node with %s language',
