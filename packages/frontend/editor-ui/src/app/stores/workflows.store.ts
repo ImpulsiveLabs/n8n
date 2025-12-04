@@ -253,15 +253,18 @@ export const useWorkflowsStore = defineStore(STORES.WORKFLOWS, () => {
 		}, {});
 	});
 
-	const nodesIssuesExist = computed(() =>
-		workflow.value.nodes.some((node) => {
-			const nodeHasIssues = !!Object.keys(node.issues ?? {}).length;
-			const isConnected =
-				Object.keys(outgoingConnectionsByNodeName(node.name)).length > 0 ||
-				Object.keys(incomingConnectionsByNodeName(node.name)).length > 0;
-			return !node.disabled && isConnected && nodeHasIssues;
-		}),
+	const nodesWithIssuesCount = computed(
+		() =>
+			workflow.value.nodes.filter((node) => {
+				const nodeHasIssues = Object.keys(node.issues ?? {}).length > 0;
+				const isConnected =
+					Object.keys(outgoingConnectionsByNodeName(node.name)).length > 0 ||
+					Object.keys(incomingConnectionsByNodeName(node.name)).length > 0;
+				return !node.disabled && isConnected && nodeHasIssues;
+			}).length,
 	);
+
+	const nodesIssuesExist = computed(() => nodesWithIssuesCount.value > 0);
 
 	/**
 	 * Get detailed validation issues for all connected, enabled nodes
@@ -1977,6 +1980,7 @@ export const useWorkflowsStore = defineStore(STORES.WORKFLOWS, () => {
 		isWorkflowRunning,
 		canvasNames,
 		nodesByName,
+		nodesWithIssuesCount,
 		nodesIssuesExist,
 		workflowValidationIssues,
 		formatIssueMessage,
