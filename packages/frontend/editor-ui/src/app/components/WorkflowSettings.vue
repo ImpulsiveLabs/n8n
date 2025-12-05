@@ -348,6 +348,7 @@ const loadWorkflows = async (searchTerm?: string) => {
 	const workflowsData = (await workflowsStore.searchWorkflows({
 		query: searchTerm,
 		isArchived: false,
+		triggerNodeType: 'n8n-nodes-base.errorTrigger',
 	})) as IWorkflowShortResponse[];
 	workflowsData.sort((a, b) => {
 		if (a.name.toLowerCase() < b.name.toLowerCase()) {
@@ -725,7 +726,18 @@ onBeforeUnmount(() => {
 								:key="item.id"
 								:label="item.name"
 								:value="item.id"
+								:disabled="item.active === false"
 							>
+								<div :class="$style.optionContent">
+									<span>{{ item.name }}</span>
+									<N8nTooltip
+										v-if="item.active === false"
+										:content="i18n.baseText('resourceLocator.workflow.inactive.tooltip')"
+										placement="top"
+									>
+										<N8nIcon icon="triangle-alert" size="small" :class="$style.inactiveIcon" />
+									</N8nTooltip>
+								</div>
 							</N8nOption>
 						</N8nSelect>
 					</ElCol>
@@ -1369,36 +1381,20 @@ onBeforeUnmount(() => {
 	}
 }
 
-.credential-resolver-container {
+.optionContent {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
+	width: 100%;
 }
 
-.create-new-button {
-	display: flex;
-	width: 100%;
-	gap: var(--spacing--3xs);
-	align-items: center;
-	font-weight: var(--font-weight--bold);
-	padding: var(--spacing--xs) var(--spacing--md);
-	background-color: var(--color--background--light-2);
-	color: var(--color--text--shade-1);
+.inactiveIcon {
+	color: var(--color--warning);
+	opacity: 0;
+	transition: opacity 0.2s ease;
 
-	border: 0;
-	border-top: var(--border);
-	box-shadow: var(--shadow--light);
-	clip-path: inset(-12px 0 0 0);
-
-	&:not([disabled]) {
-		cursor: pointer;
-		&:hover {
-			color: var(--color--primary);
-		}
-	}
-
-	&[disabled] {
-		opacity: 0.5;
-		cursor: not-allowed;
+	:global(.el-select-dropdown__item):hover & {
+		opacity: 1;
 	}
 }
 </style>
