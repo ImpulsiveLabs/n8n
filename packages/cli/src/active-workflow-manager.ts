@@ -553,10 +553,24 @@ export class ActiveWorkflowManager {
 	) {
 		const added = { webhooks: false, triggersAndPollers: false };
 
+		const dbWorkflow = existingWorkflow ?? (await this.workflowRepository.findById(workflowId));
+
+		if (!dbWorkflow) {
+			throw new WorkflowActivationError(`Failed to find workflow with ID "${workflowId}"`, {
+				level: 'warning',
+			});
+		}
+
 		if (this.instanceSettings.isMultiMain && shouldPublish) {
+			if (!dbWorkflow?.activeVersionId) {
+				throw new UnexpectedError('Active version ID not found for workflow', {
+					extra: { workflowId },
+				});
+			}
+
 			void this.publisher.publishCommand({
 				command: 'add-webhooks-triggers-and-pollers',
-				payload: { workflowId },
+				payload: { workflowId, activeVersionId: dbWorkflow.activeVersionId },
 			});
 
 			return added;
@@ -568,14 +582,6 @@ export class ActiveWorkflowManager {
 		const shouldAddTriggersAndPollers = this.shouldAddTriggersAndPollers();
 
 		try {
-			const dbWorkflow = existingWorkflow ?? (await this.workflowRepository.findById(workflowId));
-
-			if (!dbWorkflow) {
-				throw new WorkflowActivationError(`Failed to find workflow with ID "${workflowId}"`, {
-					level: 'warning',
-				});
-			}
-
 			if (['init', 'leadershipChange'].includes(activationMode) && !dbWorkflow.activeVersion) {
 				this.logger.debug(
 					`Skipping workflow ${formatWorkflow(dbWorkflow)} as it is no longer active`,
@@ -660,8 +666,11 @@ export class ActiveWorkflowManager {
 	}
 
 	@OnPubSubEvent('display-workflow-activation', { instanceType: 'main' })
-	handleDisplayWorkflowActivation({ workflowId }: PubSubCommandMap['display-workflow-activation']) {
-		this.push.broadcast({ type: 'workflowActivated', data: { workflowId } });
+	handleDisplayWorkflowActivation({
+		workflowId,
+		activeVersionId,
+	}: PubSubCommandMap['display-workflow-activation']) {
+		this.push.broadcast({ type: 'workflowActivated', data: { workflowId, activeVersionId } });
 	}
 
 	@OnPubSubEvent('display-workflow-deactivation', { instanceType: 'main' })
@@ -689,17 +698,18 @@ export class ActiveWorkflowManager {
 	})
 	async handleAddWebhooksTriggersAndPollers({
 		workflowId,
+		activeVersionId,
 	}: PubSubCommandMap['add-webhooks-triggers-and-pollers']) {
 		try {
 			await this.add(workflowId, 'activate', undefined, {
 				shouldPublish: false, // prevent leader from re-publishing message
 			});
 
-			this.push.broadcast({ type: 'workflowActivated', data: { workflowId } });
+			this.push.broadcast({ type: 'workflowActivated', data: { workflowId, activeVersionId } });
 
 			await this.publisher.publishCommand({
 				command: 'display-workflow-activation',
-				payload: { workflowId },
+				payload: { workflowId, activeVersionId },
 			}); // instruct followers to show activation in UI
 		} catch (e) {
 			const error = ensureError(e);
