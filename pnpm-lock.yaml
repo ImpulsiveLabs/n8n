@@ -1842,8 +1842,8 @@ importers:
         specifier: 'catalog:'
         version: 10.0.0
       '@types/validator':
-        specifier: ^13.7.0
-        version: 13.7.7
+        specifier: 13.7.0
+        version: 13.7.0
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1(patch_hash=682b44b740be55e5d7018e6fe335880851dadf2524b6c723c9ed0c29cb2fa7fb)
@@ -8459,8 +8459,8 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
-  '@types/eventsource@1.1.9':
-    resolution: {integrity: sha512-F3K4oyM12o8W9jxuJmW+1sc8kdw0Hj0t+26urwkcolPJTgkfppEfIdftdcXmUU2QPBIwcrYO6diqgIqgCDf1FA==}
+  '@types/eventsource@1.1.2':
+    resolution: {integrity: sha512-4AKWJ6tvEU4fk0770oAK4Z0lQUuSnc5ljHTcYZhQtdP7XMDKKvegGUC6xGD8+4+F+svZKAzlxbKnuGWfgMtgVA==}
 
   '@types/express-serve-static-core@5.0.6':
     resolution: {integrity: sha512-3xhRnjJPkULekpSzgtoNYYcTWgEZkp4myc+Saevii5JPnHNvHMRlBSHDbs7Bh1iPPoVTERHEZXyhyLbMEsExsA==}
@@ -8771,9 +8771,6 @@ packages:
   '@types/tedious@4.0.14':
     resolution: {integrity: sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==}
 
-  '@types/tedious@4.0.9':
-    resolution: {integrity: sha512-ipwFvfy9b2m0gjHsIX0D6NAAwGCKokzf5zJqUZHUGt+7uWVlBIy6n2eyMgiKQ8ChLFVxic/zwQUhjLYNzbHDRA==}
-
   '@types/temp@0.9.4':
     resolution: {integrity: sha512-+VfWIwrlept2VBTj7Y2wQnI/Xfscy1u8Pyj/puYwss6V1IblXn1x7S0S9eFh6KyBolgLCm+rUFzhFAbdkR691g==}
 
@@ -8809,9 +8806,6 @@ packages:
 
   '@types/validator@13.7.10':
     resolution: {integrity: sha512-t1yxFAR2n0+VO6hd/FJ9F2uezAZVWHLmpmlJzm1eX03+H7+HsuTAp7L8QJs+2pQCfWkP1+EXsGK9Z9v7o/qPVQ==}
-
-  '@types/validator@13.7.7':
-    resolution: {integrity: sha512-jiEw2kTUJ8Jsh4A1K4b5Pkjj9Xz6FktLLOQ36ZVLRkmxFbpTvAV2VRoKMojz8UlZxNg/2dZqzpigH4JYn1bkQg==}
 
   '@types/web-bluetooth@0.0.16':
     resolution: {integrity: sha512-oh8q2Zc32S6gd/j50GowEjKLoOVOwHP/bWVjKJInBwQqdOYMdPrf1oVlelTlyfFK3CKxL1uahMDAr+vy8T7yMQ==}
@@ -14910,6 +14904,9 @@ packages:
       zod:
         optional: true
 
+  openalex-ts@0.0.1:
+    resolution: {integrity: sha512-/AwlwtfMf38qvngjHj5K3+7nKBpIrACCMvl/9C8ciRu2aLjhwmwBLu4A7GsFQh3ud6YprXFvP+SsjQv4TfFs9A==}
+
   openapi-sampler@1.5.1:
     resolution: {integrity: sha512-tIWIrZUKNAsbqf3bd9U1oH6JEXo8LNYuDlXw26By67EygpjT+ArFnsxxyTMjFWRfbqo5ozkvgSQDK69Gd8CddA==}
 
@@ -17946,6 +17943,9 @@ packages:
 
   vue-component-type-helpers@3.1.6:
     resolution: {integrity: sha512-lqPXjac98uz7zh8fxHxJPJDP4SKeaYn2Fx4kQLCBthMXm9VsmPdzUWOGWMcXN7reJ9IkcBiOFxsFS/Po7dARiw==}
+
+  vue-component-type-helpers@2.2.8:
+    resolution: {integrity: sha512-4bjIsC284coDO9om4HPA62M7wfsTvcmZyzdfR0aUlFXqq4tXxM1APyXpNVxPC8QazKw9OhmZNHBVDA6ODaZsrA==}
 
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
@@ -25259,7 +25259,7 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
-  '@types/eventsource@1.1.9': {}
+  '@types/eventsource@1.1.2': {}
 
   '@types/express-serve-static-core@5.0.6(patch_hash=d602248fcd302cf5a794d1e85a411633ba9635ea5d566d6f2e0429c7ae0fa3eb)':
     dependencies:
@@ -25308,6 +25308,8 @@ snapshots:
   '@types/graceful-fs@4.1.9':
     dependencies:
       '@types/node': 20.19.21
+
+  '@types/html-to-text@9.0.1': {}
 
   '@types/html-to-text@9.0.4': {}
 
@@ -25669,7 +25671,7 @@ snapshots:
 
   '@types/validator@13.7.0': {}
 
-  '@types/validator@13.7.7': {}
+  '@types/validator@13.7.10': {}
 
   '@types/web-bluetooth@0.0.16': {}
 
@@ -33372,6 +33374,12 @@ snapshots:
     optionalDependencies:
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       zod: 3.25.67
+
+  openalex-ts@0.0.1:
+    dependencies:
+      axios: 1.6.0
+    transitivePeerDependencies:
+      - debug
 
   openapi-sampler@1.5.1:
     dependencies:
