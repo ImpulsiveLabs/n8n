@@ -1,135 +1,149 @@
-import { spawn } from 'child_process';
 import type {
-	INodeType,
-	INodeTypeDescription,
-	INodeExecutionData,
-	IExecuteFunctions,
+  INodeType,
+  INodeTypeDescription,
+  INodeExecutionData,
+  IExecuteFunctions,
 } from 'n8n-workflow';
 import { NodeConnectionType } from 'n8n-workflow';
-import path from 'path';
+import { OpenAlex as OpenAlexInstance, WorkResponse } from 'openalex-ts';
+import { v4 as uuidv4 } from 'uuid';
 
-// Helper function to run the Python script
-const runPythonScript = async (scriptPath: string, args: Record<string, any>): Promise<any> => {
-	return await new Promise((resolve, reject) => {
-		console.log(`Starting Python script: ${scriptPath}`);
-
-		// Prepare environment variables
-		const envVars = Object.fromEntries(
-			Object.entries(args).map(([key, value]) => [
-				`ARG${key}`,
-				typeof value === 'string' ? value : JSON.stringify(value),
-			]),
-		);
-
-		const pythonProcess = spawn('python3', [scriptPath], {
-			env: { ...process.env, ...envVars },
-			stdio: ['pipe', 'pipe', 'pipe'],
-		});
-
-		let data = '';
-
-		// Capture standard output
-		pythonProcess.stdout.on('data', (chunk) => {
-			data += chunk.toString();
-		});
-
-		// Capture standard error
-		pythonProcess.stderr.on('data', (error) => {
-			console.error(`Python error: ${error.toString().trim()}`);
-		});
-
-		// Handle script close event
-		pythonProcess.on('close', (code) => {
-			console.log(`Python process exited with code ${code}`);
-			if (code === 0) {
-				// Parse JSON output
-				try {
-					const jsonData = JSON.parse(data.trim());
-					resolve(jsonData);
-				} catch (error) {
-					console.error(`Failed to parse JSON data: ${error.message}`);
-					reject('Failed to parse JSON data');
-				}
-			} else {
-				reject(`Python process exited with code ${code}`);
-			}
-		});
-	});
+const cleanText = (text: string | null | undefined): string => {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/\\u003[CE]/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
-// Define the custom n8n node
+const isRelevant = (
+  work: WorkResponse,
+  relevantTerms: Record<string, string[]>,
+  excludeTerms: string[],
+): boolean => {
+  const title = cleanText(work.title || '').toLowerCase();
+  const topics = (work.topics || []).map((t: any) => cleanText(t.display_name || '').toLowerCase());
+  const keywords = (work.keywords || []).map((k: any) => cleanText(k.display_name || '').toLowerCase());
+	const abstract = cleanText(work.abstract || '').toLowerCase();
+  const allText = new Set([title, ...topics, ...keywords, abstract]);
+
+  let matchingCategories = 0;
+  for (const terms of Object.values(relevantTerms)) {
+    if (terms.some(term => Array.from(allText).some(text => text.includes(term.toLowerCase())))) {
+      matchingCategories++;
+    }
+  }
+
+  const isExcluded = excludeTerms.some(term =>
+    Array.from(allText).some(text => text.includes(term.toLowerCase())),
+  );
+
+  return matchingCategories >= 2 && !isExcluded;
+};
+
+const fetchOpenAlexData = async (
+  query: string,
+  relevantTerms: Record<string, string[]>,
+  excludeTerms: string[],
+): Promise<WorkResponse[]> => {
+  const openAlex = OpenAlexInstance.getInstance({
+    openalexUrl: 'https://api.openalex.org',
+    email: 'test-email@outlook.com',
+    userAgent: 'openalex-ts/1.0.0',
+    maxRetries: 3,
+    retryBackoffFactor: 0.2,
+    retryHttpCodes: [429, 500, 503],
+  });
+
+  const filters = { 'title_and_abstract.search': query, is_oa: true };
+  const allWorks: WorkResponse[] = [];
+  const paginator = openAlex.getWork()
+    .filter(filters)
+    .sort('relevance_score', 'desc')
+    .paginate('cursor', 100, null);
+
+  for await (const page of paginator) {
+    allWorks.push(...page);
+  }
+
+  const relevantWorks = allWorks.filter(work => isRelevant(work, relevantTerms, excludeTerms));
+  return relevantWorks;
+};
+
 export class OpenAlex implements INodeType {
-	description: INodeTypeDescription = {
-		displayName: 'OpenAlex Fetcher',
-		name: 'openAlex',
-		group: ['transform'],
-		icon: { light: 'file:OpenAlex.svg', dark: 'file:OpenAlex.dark.svg' },
-		version: 1,
-		description: 'Fetches data from OpenAlex using a Python script',
-		defaults: { name: 'OpenAlexFetcher' },
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
-		properties: [
-			{
-				displayName: 'Title and Abstract Query',
-				name: 'query',
-				type: 'string',
-				default: 'business management visualization',
-				required: true,
-				description: 'Search query for the title and abstract',
-			},
-			{
-				displayName: 'Relevant Terms (JSON)',
-				name: 'relevantTerms',
-				type: 'json',
-				default: '{}',
-				description: 'JSON object where each key maps to an array of relevant terms',
-			},
-			{
-				displayName: 'Exclude Terms (JSON)',
-				name: 'excludeTerms',
-				type: 'json',
-				default: '[]',
-				description: 'JSON object where each key maps to an array of exclusion terms',
-			},
-		],
-	};
+  description: INodeTypeDescription = {
+    displayName: 'OpenAlex Fetcher',
+    name: 'openAlex',
+    group: ['transform'],
+    icon: { light: 'file:OpenAlex.svg', dark: 'file:OpenAlex.dark.svg' },
+    version: 1,
+    description: 'Fetches and filters data from OpenAlex using openalex-ts',
+    defaults: { name: 'OpenAlexFetcher' },
+    inputs: [NodeConnectionType.Main],
+    outputs: [NodeConnectionType.Main],
+    properties: [
+      {
+        displayName: 'Title and Abstract Query',
+        name: 'query',
+        type: 'string',
+        default: 'business management visualization',
+        required: true,
+        description: 'Search query for the title and abstract',
+      },
+      {
+        displayName: 'Relevant Terms (JSON)',
+        name: 'relevantTerms',
+        type: 'json',
+        default: '{"management": ["management", "business", "organization", "strategy", "leadership", "administration", "enterprise"], "decision_making": ["decision", "decisions", "decision-making", "choice", "judgment", "planning"], "visualization": ["visualization", "visualizations", "data visualization", "visual", "graph", "chart", "dashboard", "analytics"]}',
+        description: 'JSON object where each key maps to an array of relevant terms',
+      },
+      {
+        displayName: 'Exclude Terms (JSON)',
+        name: 'excludeTerms',
+        type: 'json',
+        default: '["medicine", "medical", "surgery", "anesthesia", "fetal", "cancer", "disease", "biology", "clinical", "healthcare"]',
+        description: 'JSON array of exclusion terms',
+      },
+    ],
+  };
 
-	// Execute method for n8n node
-	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const returnData: INodeExecutionData[] = [];
+  async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+    const items = this.getInputData();
+    const returnData: INodeExecutionData[] = [];
 
-		// Loop over all input items
-		for (let i = 0; i < items.length; i++) {
-			// Get parameters from node input
-			const query = this.getNodeParameter('query', i, '') as string;
-			const relevantTerms = this.getNodeParameter('relevantTerms', i, {}) as Record<
-				string,
-				string[]
-			>;
-			const excludeTerms = this.getNodeParameter('excludeTerms', i, {}) as Record<string, string[]>;
+    for (let i = 0; i < items.length; i++) {
+      try {
+        const query = this.getNodeParameter('query', i, '') as string;
 
-			// Path to the Python script
-			const pythonScriptPath = path.join(__dirname, 'fetch_openalex_data.py');
-			try {
-				// Run the Python script with the provided parameters
-				const result = await runPythonScript(pythonScriptPath, {
-					1: query,
-					2: relevantTerms,
-					3: excludeTerms,
-				});
+        const relevantTermsRaw = this.getNodeParameter('relevantTerms', i, {}) as string | Record<string, string[]>;
+        const relevantTerms = typeof relevantTermsRaw === 'string' ? JSON.parse(relevantTermsRaw) : relevantTermsRaw;
 
-				// Add result to return data
-				returnData.push({ json: result });
-			} catch (error) {
-				// Handle Python script errors
-				console.error(`Error during Python script execution: ${error}`);
-				returnData.push({ json: { error: `Error executing Python script: ${error}` } });
-			}
-		}
+        const excludeTermsRaw = this.getNodeParameter('excludeTerms', i, []) as string | string[];
+        const excludeTerms = typeof excludeTermsRaw === 'string' ? JSON.parse(excludeTermsRaw) : excludeTermsRaw;
 
-		// Return the final result
-		return [returnData];
-	}
+        const result = await fetchOpenAlexData(query, relevantTerms, excludeTerms);
+
+        // Directly prepare binary without writing to disk
+        const fileName = `openalex-result-${uuidv4()}.json`;
+        const buffer = Buffer.from(JSON.stringify(result, null, 2), 'utf8');
+
+        returnData.push({
+          binary: {
+            data: await this.helpers.prepareBinaryData(buffer, fileName),
+          },
+          json: { success: true }, // Small json payload to avoid empty json
+        });
+
+      } catch (error) {
+        if (this.continueOnFail()) {
+          returnData.push({ json: { error: `Error: ${(error as Error).message}` } });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    return [returnData];
+  }
 }

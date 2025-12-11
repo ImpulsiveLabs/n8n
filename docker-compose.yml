@@ -14,9 +14,5 @@ services:
     ports:
       - "5678:5678"
     volumes:
-      - n8n_data:/home/node/.n8n
-    tmpfs:
-      - /tmp  # Helps with performance & avoiding disk issues
-
-volumes:
-  n8n_data:
+      - ./n8n_data:/home/node/.n8n   # ← LOCAL folder for DB
+      - /Users/vladimirnitu/workspace/n8n/extras:/home/node/extras
