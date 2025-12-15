@@ -429,7 +429,7 @@ export class WorkflowsController {
 		const forceSave = req.query.forceSave === 'true';
 
 		let updateData = new WorkflowEntity();
-		const { tags, parentFolderId, aiBuilderAssistedm ,expectedChecksum, ...rest } = req.body;
+		const { tags, parentFolderId, aiBuilderAssisted, expectedChecksum, ...rest } = req.body;
 
 		// TODO: Add zod validation for entire `rest` object before assigning to `updateData`
 		if (

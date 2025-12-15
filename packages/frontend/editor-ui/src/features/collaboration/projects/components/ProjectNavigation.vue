@@ -11,9 +11,8 @@ import { useProjectsStore } from '../projects.store';
 import type { ProjectListItem } from '../projects.types';
 import { CHAT_VIEW } from '@/features/ai/chatHub/constants';
 
-import { N8nButton, N8nHeading, N8nMenuItem, N8nTooltip } from '@n8n/design-system';
+import { N8nButton, N8nHeading, N8nMenuItem, N8nTooltip, N8nText } from '@n8n/design-system';
 import { hasPermission } from '@/app/utils/rbac/permissions';
-import { N8nMenuItem, N8nText } from '@n8n/design-system';
 
 type Props = {
 	collapsed: boolean;

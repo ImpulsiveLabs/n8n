@@ -19,6 +19,19 @@ const publicPath = process.env.VUE_APP_PUBLIC_PATH || '/';
 
 const { NODE_ENV } = process.env;
 
+const fixUtilTrailingSlash = () => ({
+	name: 'fix-util-trailing-slash',
+	enforce: 'pre' as const,
+	resolveId(source: string, importer?: string) {
+	if (source === 'util/' || source === 'util\\') {
+			// redirect "util/" to "util" so bundler doesn't try to load a directory
+			return this.resolve('util', importer, { skipSelf: true });
+		}
+		return null;
+	},
+});
+
+
 const browsers = browserslist.loadConfig({ path: process.cwd() });
 
 const packagesDir = resolve(__dirname, '..', '..');
@@ -26,6 +39,8 @@ const packagesDir = resolve(__dirname, '..', '..');
 const alias = [
 	{ find: '@', replacement: resolve(__dirname, 'src') },
 	{ find: 'stream', replacement: 'stream-browserify' },
+	{ find: 'util/', replacement: 'util/util.js' },
+	{ find: /^assert$/, replacement: 'assert/' },
 	// Ensure bare imports resolve to sources (not dist)
 	{ find: '@n8n/i18n', replacement: resolve(packagesDir, 'frontend', '@n8n', 'i18n', 'src') },
 	{
@@ -78,6 +93,7 @@ const alias = [
 const { RELEASE: release } = process.env;
 
 const plugins: UserConfig['plugins'] = [
+	fixUtilTrailingSlash(),
 	nodePopularityPlugin(),
 	icons({
 		compiler: 'vue3',
@@ -86,14 +102,14 @@ const plugins: UserConfig['plugins'] = [
 	// Add istanbul coverage plugin for E2E tests
 	...(process.env.BUILD_WITH_COVERAGE === 'true'
 		? [
-				istanbul({
-					include: 'src/**/*',
-					exclude: ['node_modules', 'tests/', 'dist/'],
-					extension: ['.js', '.ts', '.vue'],
-					forceBuildInstrument: true,
-					requireEnv: false,
-				}),
-			]
+			istanbul({
+				include: 'src/**/*',
+				exclude: ['node_modules', 'tests/', 'dist/'],
+				extension: ['.js', '.ts', '.vue'],
+				forceBuildInstrument: true,
+				requireEnv: false,
+			}),
+		]
 		: []),
 	viteStaticCopy({
 		targets: [
@@ -135,9 +151,9 @@ const plugins: UserConfig['plugins'] = [
 			// will replace it with the actual config script in cli/src/commands/start.ts.
 			return ctx.server
 				? html
-						.replace('%CONFIG_TAGS%', '')
-						.replaceAll('/{{BASE_PATH}}', '//localhost:5678')
-						.replaceAll('/{{REST_ENDPOINT}}', '/rest')
+					.replace('%CONFIG_TAGS%', '')
+					.replaceAll('/{{BASE_PATH}}', '//localhost:5678')
+					.replaceAll('/{{REST_ENDPOINT}}', '/rest')
 				: html;
 		},
 	},
@@ -168,16 +184,16 @@ const plugins: UserConfig['plugins'] = [
 	},
 	...(release
 		? [
-				sentryVitePlugin({
-					org: 'n8nio',
-					project: 'instance-frontend',
-					authToken: process.env.SENTRY_AUTH_TOKEN,
-					telemetry: false,
-					release: {
-						name: `n8n@${release}`,
-					},
-				}),
-			]
+			sentryVitePlugin({
+				org: 'n8nio',
+				project: 'instance-frontend',
+				authToken: process.env.SENTRY_AUTH_TOKEN,
+				telemetry: false,
+				release: {
+					name: `n8n@${release}`,
+				},
+			}),
+		]
 		: []),
 ];
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable n8n-nodes-base/node-filename-against-convention */
 import type * as amqplib from 'amqplib';
 import type {

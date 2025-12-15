@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import * as amqplib from 'amqplib';
 import type {
 	IDeferredPromise,

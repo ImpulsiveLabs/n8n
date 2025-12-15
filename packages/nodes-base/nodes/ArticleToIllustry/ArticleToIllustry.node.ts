@@ -6,7 +6,8 @@ import type {
 	IHttpRequestOptions,
 	IHttpRequestMethods,
 } from 'n8n-workflow';
-import { ApplicationError, NodeConnectionType } from 'n8n-workflow';
+
+import { ApplicationError, NodeConnectionTypes } from 'n8n-workflow';
 import type { Iso3166Alpha2CountryCode, WorkResponse } from 'openalex-ts';
 
 interface TopicCluster {
@@ -92,7 +93,7 @@ interface VisualizationResult {
 function extractTopPrimaryTopicClusters(works: WorkResponse[]): TopicCluster[] {
 	const topicCounts: Record<string, TopicCluster> = {};
 
-	works.forEach(work => {
+	works.forEach((work) => {
 		if (work.primary_topic) {
 			const topic = work.primary_topic;
 			const key = topic.id;
@@ -112,9 +113,12 @@ function extractTopPrimaryTopicClusters(works: WorkResponse[]): TopicCluster[] {
 		.slice(0, 6);
 }
 
-async function createVisualizations(works: WorkResponse[], topClusters: TopicCluster[]): Promise<VisualizationResult> {
+async function createVisualizations(
+	works: WorkResponse[],
+	topClusters: TopicCluster[],
+): Promise<VisualizationResult> {
 	const nameCounts: Record<string, number> = {};
-	works.forEach(work => {
+	works.forEach((work) => {
 		const name = work.display_name;
 		if (name) {
 			nameCounts[name] = (nameCounts[name] || 0) + 1;
@@ -122,16 +126,18 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 	});
 
 	const clusterMap: Record<string, ClusterMapEntry> = {};
-	works.forEach(work => {
+	works.forEach((work) => {
 		if (work.primary_topic && work.display_name && work.created_date && work.authorships) {
 			const topicId = work.primary_topic.id;
 			const name = work.display_name;
-			if (topClusters.some(cluster => cluster.id === topicId)) {
-				const countries = [...new Set(
-					work.authorships
-						.flatMap(auth => auth.countries)
-						.filter((country): country is Iso3166Alpha2CountryCode => !!country)
-				)];
+			if (topClusters.some((cluster) => cluster.id === topicId)) {
+				const countries = [
+					...new Set(
+						work.authorships
+							.flatMap((auth) => auth.countries)
+							.filter((country): country is Iso3166Alpha2CountryCode => !!country),
+					),
+				];
 
 				clusterMap[work.id] = {
 					topic_id: topicId,
@@ -140,26 +146,33 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 					cluster_name: work?.primary_topic.display_name,
 					created_date: work?.created_date,
 					authors: work?.authorships
-						.map(auth => auth.author?.display_name)
+						.map((auth) => auth.author?.display_name)
 						// eslint-disable-next-line @typescript-eslint/no-shadow
 						.filter((name): name is string => !!name),
-					institutions: work.authorships
-						.flatMap(auth =>
-							(auth.institutions || [])
-								.map(inst => ({
-									display_name: inst.display_name,
-									country_code: inst.country_code || (auth.countries && auth.countries[0]),
-								}))
-								.filter((inst): inst is { display_name: string; country_code: Iso3166Alpha2CountryCode } => !!inst.display_name && !!inst.country_code)
-						),
+					institutions: work.authorships.flatMap((auth) =>
+						(auth.institutions || [])
+							.map((inst) => ({
+								display_name: inst.display_name,
+								country_code: inst.country_code || (auth.countries && auth.countries[0]),
+							}))
+							.filter(
+								(inst): inst is { display_name: string; country_code: Iso3166Alpha2CountryCode } =>
+									!!inst.display_name && !!inst.country_code,
+							),
+					),
 				};
 			}
 		}
 	});
 
 	const calendar: CalendarEntry[] = Object.keys(clusterMap)
-		.filter(workId => topClusters.some(cluster => cluster.id === clusterMap[workId].topic_id) && clusterMap[workId].created_date !== undefined && clusterMap[workId].created_date !== null)
-		.map(workId => ({
+		.filter(
+			(workId) =>
+				topClusters.some((cluster) => cluster.id === clusterMap[workId].topic_id) &&
+				clusterMap[workId].created_date !== undefined &&
+				clusterMap[workId].created_date !== null,
+		)
+		.map((workId) => ({
 			date: clusterMap[workId].created_date,
 			value: 1,
 			category: clusterMap[workId].cluster_name,
@@ -169,8 +182,8 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 		}));
 
 	const countryCounts: Record<string, number> = {};
-	Object.values(clusterMap).forEach(work => {
-		work.countries.forEach(country => {
+	Object.values(clusterMap).forEach((work) => {
+		work.countries.forEach((country) => {
 			countryCounts[country] = (countryCounts[country] || 0) + 1;
 		});
 	});
@@ -178,15 +191,15 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 	const topCountryCounts = Object.fromEntries(
 		Object.entries(countryCounts)
 			.sort((a, b) => b[1] - a[1])
-			.slice(0, 6)
+			.slice(0, 6),
 	);
 
 	const authorCounts: Record<string, number> = {};
 	const authorCategories: Record<string, string> = {};
 	const coauthorshipCounts: Record<string, number> = {};
 
-	Object.values(clusterMap).forEach(work => {
-		work.authors.forEach(author => {
+	Object.values(clusterMap).forEach((work) => {
+		work.authors.forEach((author) => {
 			authorCounts[author] = (authorCounts[author] || 0) + 1;
 			if (!authorCategories[author]) {
 				authorCategories[author] = work.cluster_name;
@@ -202,15 +215,15 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 	});
 
 	const authorNodes: AuthorNode[] = Object.keys(authorCounts)
-		.filter(author => authorCounts[author] >= 2)
-		.map(author => ({
+		.filter((author) => authorCounts[author] >= 2)
+		.map((author) => ({
 			name: author,
 			category: authorCategories[author],
 		}));
 
 	const authorLinks: AuthorLink[] = Object.keys(coauthorshipCounts)
-		.filter(pair => coauthorshipCounts[pair] >= 2)
-		.map(pair => {
+		.filter((pair) => coauthorshipCounts[pair] >= 2)
+		.map((pair) => {
 			const [source, target] = pair.split(',');
 			return {
 				source,
@@ -224,9 +237,9 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 	const institutionCoCounts: Record<string, number> = {};
 	const countryInstitutionCounts: Record<string, Record<string, number>> = {};
 
-	Object.values(clusterMap).forEach(work => {
-		const instNames = work.institutions.map(inst => inst.display_name);
-		work.institutions.forEach(inst => {
+	Object.values(clusterMap).forEach((work) => {
+		const instNames = work.institutions.map((inst) => inst.display_name);
+		work.institutions.forEach((inst) => {
 			const instName = inst.display_name;
 			const country = inst.country_code;
 			institutionCounts[instName] = (institutionCounts[instName] || 0) + 1;
@@ -234,7 +247,8 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 				institutionCategories[instName] = country;
 			}
 			countryInstitutionCounts[country] = countryInstitutionCounts[country] || {};
-			countryInstitutionCounts[country][instName] = (countryInstitutionCounts[country][instName] || 0) + 1;
+			countryInstitutionCounts[country][instName] =
+				(countryInstitutionCounts[country][instName] || 0) + 1;
 		});
 
 		for (let i = 0; i < instNames.length; i++) {
@@ -246,35 +260,42 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 	});
 
 	const countryTotalCounts: Record<string, number> = {};
-	Object.keys(countryInstitutionCounts).forEach(country => {
-		countryTotalCounts[country] = Object.values(countryInstitutionCounts[country]).reduce((sum, count) => sum + count, 0);
+	Object.keys(countryInstitutionCounts).forEach((country) => {
+		countryTotalCounts[country] = Object.values(countryInstitutionCounts[country]).reduce(
+			(sum, count) => sum + count,
+			0,
+		);
 	});
 	const top6Countries = Object.keys(countryTotalCounts)
 		.sort((a, b) => countryTotalCounts[b] - countryTotalCounts[a])
 		.slice(0, 6);
 
 	const selectedInstitutions = new Set<string>();
-	top6Countries.forEach(country => {
+	top6Countries.forEach((country) => {
 		const insts = Object.entries(countryInstitutionCounts[country] || {})
 			.filter(([_, count]) => count >= 2)
 			.sort((a, b) => b[1] - a[1])
 			.slice(0, 10)
 			.map(([inst]) => inst);
-		insts.forEach(inst => selectedInstitutions.add(inst));
+		insts.forEach((inst) => selectedInstitutions.add(inst));
 	});
 
 	const institutionNodes: InstitutionNode[] = Object.keys(institutionCounts)
-		.filter(inst => institutionCounts[inst] >= 2 && selectedInstitutions.has(inst))
-		.map(inst => ({
+		.filter((inst) => institutionCounts[inst] >= 2 && selectedInstitutions.has(inst))
+		.map((inst) => ({
 			name: inst,
 			category: institutionCategories[inst],
 		}));
 
 	const institutionLinks: InstitutionLink[] = Object.keys(institutionCoCounts)
-		.filter(pair => institutionCoCounts[pair] >= 2)
-		.map(pair => {
+		.filter((pair) => institutionCoCounts[pair] >= 2)
+		.map((pair) => {
 			const [source, target] = pair.split(',');
-			if (source !== target && selectedInstitutions.has(source) && selectedInstitutions.has(target)) {
+			if (
+				source !== target &&
+				selectedInstitutions.has(source) &&
+				selectedInstitutions.has(target)
+			) {
 				return {
 					source,
 					target,
@@ -287,9 +308,9 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 
 	const conceptCounts: Record<string, number> = {};
 	const conceptOriginalNames: Record<string, string> = {};
-	works.forEach(work => {
+	works.forEach((work) => {
 		if (work.concepts && Array.isArray(work.concepts)) {
-			work.concepts.forEach(concept => {
+			work.concepts.forEach((concept) => {
 				if (concept.display_name) {
 					const normalized = concept.display_name.toLowerCase();
 					conceptCounts[normalized] = (conceptCounts[normalized] || 0) + 1;
@@ -311,9 +332,9 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 
 	const keywordCounts: Record<string, number> = {};
 	const keywordOriginalNames: Record<string, string> = {};
-	works.forEach(work => {
+	works.forEach((work) => {
 		if (work.keywords && Array.isArray(work.keywords)) {
-			work.keywords.forEach(keywordObj => {
+			work.keywords.forEach((keywordObj) => {
 				if (keywordObj.display_name) {
 					const normalized = keywordObj.display_name.toLowerCase();
 					keywordCounts[normalized] = (keywordCounts[normalized] || 0) + 1;
@@ -334,7 +355,7 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 		}));
 
 	const topArticles: Article[] = works
-		.filter(work => work.cited_by_count !== undefined && work.cited_by_count !== null)
+		.filter((work) => work.cited_by_count !== undefined && work.cited_by_count !== null)
 		.sort((a, b) => {
 			if (b.cited_by_count !== a.cited_by_count) {
 				return b.cited_by_count - a.cited_by_count;
@@ -342,7 +363,7 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 			return a.id.localeCompare(b.id);
 		})
 		.slice(0, 6)
-		.map(work => ({
+		.map((work) => ({
 			id: work.id,
 			display_name: work.display_name || `Untitled Article ${work.id}`,
 			cited_by_count: work.cited_by_count || 0,
@@ -356,12 +377,12 @@ async function createVisualizations(works: WorkResponse[], topClusters: TopicClu
 		values: {},
 	};
 
-	topArticles.forEach(article => {
+	topArticles.forEach((article) => {
 		const titleKey = article.display_name.replace(/\n/g, ' ');
 		const yearlyCounts = new Array(headers.length).fill(0);
 
 		if (article.counts_by_year.length > 0) {
-			article.counts_by_year.forEach(count => {
+			article.counts_by_year.forEach((count) => {
 				const yearIndex = headers.indexOf(count.year.toString());
 				if (yearIndex !== -1 && count.year >= Math.max(article.publication_year, 2021)) {
 					yearlyCounts[yearIndex] = count.cited_by_count || 0;
@@ -410,10 +431,11 @@ export class ArticleToIllustry implements INodeType {
 		group: ['transform'],
 		icon: { light: 'file:Illustry.svg', dark: 'file:Illustry.dark.svg' },
 		version: 1,
-		description: 'Processes OpenAlex publication data from a previous node to generate visualizations and save to Illustry API',
+		description:
+			'Processes OpenAlex publication data from a previous node to generate visualizations and save to Illustry API',
 		defaults: { name: 'ArticleToIllustry' },
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		properties: [
 			{
 				displayName: 'Illustry API URL',

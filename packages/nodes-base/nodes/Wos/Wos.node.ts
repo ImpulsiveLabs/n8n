@@ -7,17 +7,17 @@ import type {
 	IHttpRequestOptions,
 	IHttpRequestMethods,
 } from 'n8n-workflow';
-import { NodeConnectionType, ApplicationError } from 'n8n-workflow';
+import { NodeConnectionTypes, ApplicationError } from 'n8n-workflow';
 import type { WorkResponse } from 'openalex-ts';
 import { SourceType } from 'openalex-ts';
 import { OpenAlex as OpenAlexInstance } from 'openalex-ts';
 import { v4 as uuidv4 } from 'uuid';
 
 function parseTSV(fileContent: string): Array<Record<string, string>> {
-	const lines = fileContent.split('\n').filter(line => line.trim());
-	const headers = lines[0].split('\t').map(header => header.trim());
-	return lines.slice(1).map(line => {
-		const values = line.split('\t').map(value => value.trim());
+	const lines = fileContent.split('\n').filter((line) => line.trim());
+	const headers = lines[0].split('\t').map((header) => header.trim());
+	return lines.slice(1).map((line) => {
+		const values = line.split('\t').map((value) => value.trim());
 		const record: Record<string, string> = {};
 		headers.forEach((header, index) => {
 			record[header] = values[index] || '';
@@ -43,7 +43,10 @@ function createInvertedIndex(abstract: string): Record<string, number[]> {
 function getAuthorLastname(name: string, isTSV = false): string {
 	if (!name) return '';
 	if (isTSV) {
-		const parts = name.split(',').map(part => part.trim()).filter(Boolean);
+		const parts = name
+			.split(',')
+			.map((part) => part.trim())
+			.filter(Boolean);
 		return parts[0].toLowerCase();
 	}
 	const words = name.split(/\s+/).filter(Boolean);
@@ -55,22 +58,24 @@ async function sendHttpPost(
 	article: { title: string; authors: string },
 	journal: string,
 	abstract: string,
-	serverUrl: string
+	serverUrl: string,
 ): Promise<any> {
-	const payload = [{
-		title: article.title,
-		abstract_inverted_index: createInvertedIndex(abstract),
-		inverted: true,
-		referenced_works: [],
-		journal_display_name: journal
-	}];
+	const payload = [
+		{
+			title: article.title,
+			abstract_inverted_index: createInvertedIndex(abstract),
+			inverted: true,
+			referenced_works: [],
+			journal_display_name: journal,
+		},
+	];
 	const requestOptions: IHttpRequestOptions = {
 		method: 'POST' as IHttpRequestMethods,
 		url: `${serverUrl}/invocations`,
 		headers: { 'Content-Type': 'application/json' },
 		body: payload,
 		json: true,
-		timeout: 120000
+		timeout: 120000,
 	};
 	try {
 		return await this.helpers.httpRequest(requestOptions);
@@ -79,7 +84,10 @@ async function sendHttpPost(
 	}
 }
 
-async function searchOpenAlex(title: string, authors: string): Promise<{ found: boolean; work?: WorkResponse }> {
+async function searchOpenAlex(
+	title: string,
+	authors: string,
+): Promise<{ found: boolean; work?: WorkResponse }> {
 	try {
 		const openAlex = OpenAlexInstance.getInstance({
 			openalexUrl: 'https://api.openalex.org',
@@ -90,26 +98,30 @@ async function searchOpenAlex(title: string, authors: string): Promise<{ found: 
 			retryHttpCodes: [429, 500, 503],
 		});
 		const filters = { 'title_and_abstract.search': title };
-		const response = await openAlex
+		const response = (await openAlex
 			.getWork()
 			.filter(filters)
 			.sort('relevance_score', 'desc')
-			.get() as WorkResponse[];
+			.get()) as WorkResponse[];
 
 		const tsvAuthorLastnames = authors
 			.split(';')
-			.map(author => getAuthorLastname(author.trim(), true))
+			.map((author) => getAuthorLastname(author.trim(), true))
 			.filter(Boolean);
 
 		for (const work of response) {
 			if (work.title && work.title.toLowerCase() === title.toLowerCase()) {
 				const openAlexAuthorLastnames = (work.authorships || [])
-					.map(authorship => getAuthorLastname(authorship.author?.display_name || '', false))
+					.map((authorship) => getAuthorLastname(authorship.author?.display_name || '', false))
 					.filter(Boolean);
 
-				if (tsvAuthorLastnames.some(tsvLastname =>
-					openAlexAuthorLastnames.some(openAlexLastname => openAlexLastname.includes(tsvLastname))
-				)) {
+				if (
+					tsvAuthorLastnames.some((tsvLastname) =>
+						openAlexAuthorLastnames.some((openAlexLastname) =>
+							openAlexLastname.includes(tsvLastname),
+						),
+					)
+				) {
 					return { found: true, work };
 				}
 			}
@@ -122,7 +134,11 @@ async function searchOpenAlex(title: string, authors: string): Promise<{ found: 
 
 function constructWorkResponse(record: Record<string, string>, postResponse: any): WorkResponse {
 	const id = `https://openalex.org/W${uuidv4().replace(/-/g, '')}`;
-	const authors = record.AU ? record.AU.split(';').map(a => a.trim()).filter(Boolean) : ['Unknown Author'];
+	const authors = record.AU
+		? record.AU.split(';')
+				.map((a) => a.trim())
+				.filter(Boolean)
+		: ['Unknown Author'];
 	const publicationYear = parseInt(record.PY, 10) || 2021;
 	const topics = Array.isArray(postResponse) && postResponse[0] ? postResponse[0] : [];
 	const primaryTopic = topics[0] || null;
@@ -135,17 +151,19 @@ function constructWorkResponse(record: Record<string, string>, postResponse: any
 		cited_by_count: parseInt(record.TC, 10) || 0,
 		counts_by_year: [],
 		created_date: null,
-		authorships: authors.map(author => ({
-			author: { display_name: author }
+		authorships: authors.map((author) => ({
+			author: { display_name: author },
 		})) as any[],
-		primary_topic: primaryTopic ? {
-			id: `https://openalex.org/T${primaryTopic.topic_id}`,
-			display_name: primaryTopic.topic_label.replace(/^\d+:\s*/, '').trim()
-		} : null as any,
+		primary_topic: primaryTopic
+			? {
+					id: `https://openalex.org/T${primaryTopic.topic_id}`,
+					display_name: primaryTopic.topic_label.replace(/^\d+:\s*/, '').trim(),
+				}
+			: (null as any),
 		concepts: topics.map((topic: any) => ({
 			id: `https://openalex.org/T${topic.topic_id}`,
 			display_name: topic.topic_label.replace(/^\d+:\s*/, '').trim(),
-			score: topic.topic_score
+			score: topic.topic_score,
 		})),
 		keywords: [],
 		primary_location: {
@@ -163,9 +181,9 @@ function constructWorkResponse(record: Record<string, string>, postResponse: any
 				is_core: false,
 				is_oa: false,
 				is_in_doaj: false,
-				type: SourceType.EDUCATION
-			}
-		} as any
+				type: SourceType.EDUCATION,
+			},
+		} as any,
 	} as any;
 }
 
@@ -177,17 +195,19 @@ export class Wos implements INodeType {
 		icon: { light: 'file:Wos.svg', dark: 'file:Wos.dark.svg' },
 		version: 1,
 
-		description: 'Processes Web of Science TSV files and fetches topics from a classifier server, combining with OpenAlex input',
+		description:
+			'Processes Web of Science TSV files and fetches topics from a classifier server, combining with OpenAlex input',
 		defaults: { name: 'Wos' },
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		properties: [
 			{
 				displayName: 'TSV File Path',
 				name: 'tsvFilePath',
 				type: 'string',
 				default: '/home/node/extras/Articles.txt',
-				description: 'Path to the Web of Science TSV file. If not provided or file does not exist, processes input data.'
+				description:
+					'Path to the Web of Science TSV file. If not provided or file does not exist, processes input data.',
 			},
 			{
 				displayName: 'Classifier Server URL',
@@ -195,9 +215,9 @@ export class Wos implements INodeType {
 				type: 'string',
 				default: 'http://openalexclassifier:8080',
 				required: true,
-				description: 'URL of the server for topic classification (e.g., http://localhost:8080)'
-			}
-		]
+				description: 'URL of the server for topic classification (e.g., http://localhost:8080)',
+			},
+		],
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -221,7 +241,9 @@ export class Wos implements INodeType {
 				}
 
 				// Track processed titles to avoid duplicates
-				const processedTitles = new Set(inputWorks.map(work => work.title?.toLowerCase()).filter(Boolean));
+				const processedTitles = new Set(
+					inputWorks.map((work) => work.title?.toLowerCase()).filter(Boolean),
+				);
 
 				// Initialize output with input works
 				const workResponses: WorkResponse[] = [...inputWorks];
@@ -242,9 +264,23 @@ export class Wos implements INodeType {
 						}
 
 						if (!title || !authors) {
-							const article = { title: title || '(Missing Title)', authors: authors || '(Missing Authors)' };
-							const postResponse = await sendHttpPost.call(this, article, journal, abstract, classifierServerUrl);
-							workResponses.push(constructWorkResponse({ ...record, TI: title || '(Missing Title)', AU: authors || '(Missing Authors)' }, postResponse));
+							const article = {
+								title: title || '(Missing Title)',
+								authors: authors || '(Missing Authors)',
+							};
+							const postResponse = await sendHttpPost.call(
+								this,
+								article,
+								journal,
+								abstract,
+								classifierServerUrl,
+							);
+							workResponses.push(
+								constructWorkResponse(
+									{ ...record, TI: title || '(Missing Title)', AU: authors || '(Missing Authors)' },
+									postResponse,
+								),
+							);
 							continue;
 						}
 
@@ -253,7 +289,13 @@ export class Wos implements INodeType {
 							workResponses.push(result.work);
 						} else {
 							const article = { title, authors };
-							const postResponse = await sendHttpPost.call(this, article, journal, abstract, classifierServerUrl);
+							const postResponse = await sendHttpPost.call(
+								this,
+								article,
+								journal,
+								abstract,
+								classifierServerUrl,
+							);
 							workResponses.push(constructWorkResponse(record, postResponse));
 						}
 					}
@@ -265,9 +307,9 @@ export class Wos implements INodeType {
 
 				returnData.push({
 					binary: {
-						data: await this.helpers.prepareBinaryData(buffer, fileName)
+						data: await this.helpers.prepareBinaryData(buffer, fileName),
 					},
-					json: { success: true }
+					json: { success: true },
 				});
 			} catch (error) {
 				if (this.continueOnFail()) {
